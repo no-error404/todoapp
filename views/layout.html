@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{title}}</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    a { color: #0066cc; }
+    .todo-item { border: 1px solid #ddd; padding: 10px; margin: 8px 0; border-radius: 4px; }
+    .completed { text-decoration: line-through; color: #999; }
+    button { cursor: pointer; }
+    .btn-delete { background: #cc0000; color: white; border: none; padding: 4px 10px; border-radius: 4px; }
+    label { display: block; margin: 8px 0 4px; }
+    input[type="text"] { width: 100%; padding: 6px; box-sizing: border-box; }
+    input[type="submit"] { margin-top: 12px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h1><a href="/todos">📝 My Todos</a></h1>
+  {{content}}
+</body>
+</html>

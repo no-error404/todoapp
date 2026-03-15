@@ -1,0 +1,17 @@
+<h2>{{formTitle}}</h2>
+
+<form method="POST" action="{{formAction}}">
+
+  <label for="title">Title</label>
+  <input type="text" id="title" name="title" value="{{currentTitle}}" required>
+
+  <label>
+    <input type="checkbox" name="completed" value="1" {{checkedAttr}}>
+    Mark as completed
+  </label>
+
+  <br>
+  <input type="submit" value="{{submitLabel}}">
+</form>
+
+<p><a href="/todos">← Cancel</a></p>

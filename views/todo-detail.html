@@ -1,0 +1,14 @@
+<div class="todo-item">
+  <h2 class="{{completedClass}}">{{todoTitle}}</h2>
+  <p>Status: {{status}}</p>
+</div>
+
+<p>
+  <a href="/todos/{{id}}/edit">✏️ Edit</a>
+</p>
+
+<form method="POST" action="/todos/{{id}}/delete">
+  <button type="submit" class="btn-delete">🗑️ Delete</button>
+</form>
+
+<p><a href="/todos">← Back to all todos</a></p>

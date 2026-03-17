@@ -121,6 +121,12 @@ app.get("/", (req, res) => {
     res.redirect("/signup");
 });
 
+app.get("/logout", (req, res) => {
+    res.status(401)
+       .set("WWW-Authenticate", 'Basic realm="Todos"')
+       .send('Logged out. <a href="/todos">Sign in again</a>');
+});
+
 app.use(requireLogin); //use the login function for every route
 
 

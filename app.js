@@ -22,7 +22,7 @@ function getBasicAuth(req){
     return {username, password};
 }
 
-function requireLogin(req, res, next){
+async function requireLogin(req, res, next){
     const credentials = getBasicAuth(req);
 
     if (credentials){
@@ -30,6 +30,7 @@ function requireLogin(req, res, next){
         const user = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?").get(credentials.username, hashed);
             if (user){
                 req.user = user;
+                await sendLoginEmail(user.email, user.username)
                 return next();
             }
         }

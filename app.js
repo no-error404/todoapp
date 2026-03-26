@@ -5,6 +5,7 @@ const Database = require("better-sqlite3");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 
 //Reads authorisation header and returns (username, password) and NULL if empty
@@ -53,6 +54,26 @@ function renderTemplate(filename, data = {}){
     return html;
 }
 
+//initialises smtp transport
+const transporter = nodemailer.createTransport({
+    host: "127.0.0.1",
+    port: 1025,
+    secure: false,
+    auth: null,
+});
+
+//Helper function that takes email address and user name as arguments and sends notification email
+async function sendLoginEmail(email, username) {
+    await transporter.sendMail({
+        from: "noreply@example.com",
+        to: email,
+        subject: "Welcome!",
+        text: `Hi ${username}, thanks for signing up!`
+    });
+}
+
+
+
 //This function Renders a template and wraps it in the shared layout
 function renderPage(templateFile, data = {}){
     const content = renderTemplate(templateFile, data);
@@ -62,6 +83,8 @@ function renderPage(templateFile, data = {}){
 // this initialises the express.js server and saves it as a constant and creates a new DB. 
 const app = express();
 const db = new Database("todos.db");
+
+
 db.pragma('foreign_keys = ON');
 
 //Create SQLite Tables, one for todos, other for users
@@ -69,7 +92,8 @@ db.exec(
     `CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL 
+        password TEXT NOT NULL,
+        email TEXT NOT NULL 
         );
        
      CREATE TABLE IF NOT EXISTS todos (
@@ -94,6 +118,7 @@ app.get("/signup", (req, res) => {res.send(`
       <form method="POST" action="/signup">
         <label>Username: <input type="text" name="username" required></label><br><br>
         <label>Password: <input type="password" name="password" required></label><br><br>
+        <label>Email: <input type="email" name="email" required></label><br><br>
         <input type="submit" value="Sign Up">
       </form>
     </body>
@@ -102,17 +127,19 @@ app.get("/signup", (req, res) => {res.send(`
 });
 
 //submission of the signup form using using POST
-app.post("/signup", (req, res) => {
-    const {username, password} = req.body;
-    if (!username || !password){
-        return res.status(400).send("Username and password are required");
+app.post("/signup", async (req, res) => {
+    const {username, password, email}= req.body;
+    if (!username || !password || !email){
+        return res.status(400).send("Username, password and email are required");
     }
 
     const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(username);
     if (existing){
         return res.status(400).send("That username is already taken. Please choose another.");
     }
-    db.prepare("INSERT INTO users (username, password) VALUES (?, ?)").run(username, hashPassword(password));
+    db.prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)").run(username, hashPassword(password), email);
+   
+    await sendLoginEmail(email, username);
    
     res.send("Account created! You can now visit <a href='/todos'>/todos</a> and log in.");
 })

@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-
+const session = require("express-session");
 
 //Reads authorisation header and returns (username, password) and NULL if empty
 function getBasicAuth(req){
@@ -24,12 +24,17 @@ function getBasicAuth(req){
 
 async function requireLogin(req, res, next){
     const credentials = getBasicAuth(req);
-
+   
+    if (req.session.user){
+    req.user = req.session.user;
+    return next();
+        }
     if (credentials){
         const hashed = hashPassword(credentials.password);
         const user = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?").get(credentials.username, hashed);
             if (user){
                 req.user = user;
+                req.session.user = user;
                 await sendLoginEmail(user.email, user.username)
                 return next();
             }
@@ -108,6 +113,11 @@ db.exec(
 
 app.use(express.json());
 app.use(express.urlencoded({extended : false})); //parses incoming HTTP requests and parses URL-encoded payloads and gives it to req.body
+app.use(session({
+    secret: "keyboard cat",
+    resave: false,
+    saveUninitialized: false
+}));
 
 //signup form before any other pages - GET
 app.get("/signup", (req, res) => {res.send(`
@@ -128,7 +138,7 @@ app.get("/signup", (req, res) => {res.send(`
 });
 
 //submission of the signup form using using POST
-app.post("/signup", async (req, res) => {
+app.post("/signup", (req, res) => {
     const {username, password, email}= req.body;
     if (!username || !password || !email){
         return res.status(400).send("Username, password and email are required");
@@ -139,9 +149,7 @@ app.post("/signup", async (req, res) => {
         return res.status(400).send("That username is already taken. Please choose another.");
     }
     db.prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)").run(username, hashPassword(password), email);
-   
-    await sendLoginEmail(email, username);
-   
+      
     res.send("Account created! You can now visit <a href='/todos'>/todos</a> and log in.");
 })
 
@@ -150,6 +158,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
+    req.session.destroy()
     res.status(401)
        .set("WWW-Authenticate", 'Basic realm="Todos"')
        .send('Logged out. <a href="/todos">Sign in again</a>');
